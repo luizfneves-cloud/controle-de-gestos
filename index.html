@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Núcleo de Energia · Controle por gestos</title>
+
+  <!-- Fontes (opcionais: se a rede falhar, o CSS usa fontes monoespaçadas do sistema) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- MediaPipe Hands + utilitário de câmera (versões fixas via CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <!-- O <video> fica invisível: só fornece frames. Quem desenha a imagem é o Canvas. -->
+  <video id="webcam" playsinline muted autoplay></video>
+
+  <!-- Canvas principal: vídeo de fundo + núcleo + efeitos + esqueleto das mãos -->
+  <canvas id="stage"></canvas>
+
+  <!-- Efeitos de tela (puro CSS) -->
+  <div class="fx fx-scanlines"></div>
+  <div class="fx fx-vignette"></div>
+
+  <!-- HUD principal: leitura em tempo real da IA -->
+  <aside id="hud" aria-live="polite">
+    <header class="hud-title">
+      <h1>Núcleo de Energia</h1>
+      <span class="hud-sub">link gestual</span>
+    </header>
+
+    <div class="row">
+      <span class="label">Sistema</span>
+      <span class="value" id="hud-status">aguardando início</span>
+    </div>
+    <div class="row">
+      <span class="label">Mãos detectadas</span>
+      <span class="value" id="hud-hands">0</span>
+    </div>
+
+    <div class="hand-slot" id="hud-hand-0" data-state="none">
+      <span class="slot-name">Mão 1</span>
+      <span class="slot-gesture">—</span>
+    </div>
+    <div class="hand-slot" id="hud-hand-1" data-state="none">
+      <span class="slot-name">Mão 2</span>
+      <span class="slot-gesture">—</span>
+    </div>
+
+    <div class="row core-row">
+      <span class="label">Núcleo</span>
+      <span class="badge" id="hud-core-state" data-state="stable">Estável</span>
+    </div>
+
+    <div class="meter">
+      <span class="label">Carga do reator</span>
+      <div class="bar bar-charge"><i id="bar-charge"></i></div>
+      <span class="value" id="val-charge">0%</span>
+    </div>
+    <div class="meter">
+      <span class="label">Estabilidade</span>
+      <div class="bar bar-stable"><i id="bar-stability"></i></div>
+      <span class="value" id="val-stability">100%</span>
+    </div>
+
+    <div class="row">
+      <span class="label">Formação</span>
+      <span class="value" id="hud-formation">Esfera estável</span>
+    </div>
+
+    <div class="action" id="hud-action" data-state="idle">Aguardando gesto</div>
+
+    <div class="metrics">
+      <div><span class="label">Raio</span><span class="value" id="hud-radius">0 px</span></div>
+      <div><span class="label">Velocidade</span><span class="value" id="hud-speed">0 px/s</span></div>
+      <div><span class="label">Quadros</span><span class="value" id="hud-fps">0 fps</span></div>
+    </div>
+  </aside>
+
+  <!-- Registro de eventos (estilo terminal do J.A.R.V.I.S) -->
+  <aside id="log">
+    <h2>Registro de eventos</h2>
+    <ul id="hud-log"></ul>
+  </aside>
+
+  <!-- Guia dos gestos -->
+  <aside id="legend">
+    <h2>Gestos</h2>
+    <ul>
+      <li><span class="ico">🤏</span><b>Pinça</b> agarra e arrasta o núcleo. Com 2 mãos, afaste ou aproxime para mudar o tamanho</li>
+      <li><span class="ico">✋</span><b>Mão aberta</b> pulso de repulsão. Varrer rápido empurra e gira o núcleo</li>
+      <li><span class="ico">✊</span><b>Punho</b> segure para carregar o reator, depois abra a mão para detonar</li>
+      <li><span class="ico">☝️</span><b>Indicador</b> desenha no ar, atrai partículas e escaneia o núcleo</li>
+      <li><span class="ico">✌️</span><b>Sinal de paz</b> troca a formação (esfera, anel, DNA, cubo, átomo, galáxia)</li>
+      <li><span class="ico">👍</span><b>Joinha</b> estabiliza o núcleo e acalma tudo</li>
+      <li><span class="ico">🤘</span><b>Chifres</b> modo sobrecarga</li>
+      <li><span class="ico">👏</span><b>Palmas</b> onda sônica que reinicia o núcleo</li>
+    </ul>
+    <p class="keys">Teclas: R reposiciona · F formação · D detonar · H esconde painéis</p>
+  </aside>
+
+  <!-- Tela de início / erros -->
+  <div id="overlay">
+    <div class="overlay-box">
+      <h2>Núcleo de Energia</h2>
+      <p id="overlay-msg">
+        Use a webcam para controlar o núcleo com as mãos.<br />
+        O vídeo é processado localmente no seu navegador.
+      </p>
+      <button id="btn-start" type="button">Ativar câmera</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
